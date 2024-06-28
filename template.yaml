@@ -1,0 +1,929 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create AWS Infrastructure for Upschool Application
+
+Parameters:
+  StackName:
+    Type: String
+    Default: 'upschool-stack'
+  Stage:
+    Type: String
+  Region: 
+    Type: String
+  Account: 
+    Type: String
+  TopicName1:
+    Type: String
+    Default: 'upschool-sendOTP'
+  ReadCapacityUnits:
+    Description: Provisioned read throughput
+    Type: Number
+    Default: '5'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+  WriteCapacityUnits:
+    Description: Provisioned write throughput
+    Type: Number
+    Default: '10'
+    MinValue: '5'
+    MaxValue: '10000'
+    ConstraintDescription: must be between 5 and 10000
+
+Resources:
+  DB1:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_users_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: user_id
+          AttributeType: 'S'        
+        - AttributeName: user_email
+          AttributeType: 'S' 
+        - AttributeName: user_phone_no
+          AttributeType: 'S' 
+        - AttributeName: user_name
+          AttributeType: 'S'    
+        - AttributeName: common_id
+          AttributeType: 'S'    
+      KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: user_email-index
+        KeySchema:
+        - AttributeName: user_email
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: user_phone_no-index
+        KeySchema:
+        - AttributeName: user_phone_no
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: user_name-index
+        KeySchema:
+        - AttributeName: user_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB2:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_school_info_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: school_id
+          AttributeType: 'S'
+        - AttributeName: school_name
+          AttributeType: 'S'           
+        - AttributeName: common_id
+          AttributeType: 'S'     
+        - AttributeName: lc_school_name
+          AttributeType: 'S'   
+      KeySchema:
+        - AttributeName: school_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: school_name-index
+        KeySchema:
+        - AttributeName: school_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL      
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: lc_school_name-index
+        KeySchema:
+        - AttributeName: lc_school_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB3:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_teacher_info' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: teacher_id
+          AttributeType: 'S'
+        - AttributeName: school_id
+          AttributeType: 'S'           
+        - AttributeName: common_id
+          AttributeType: 'S'          
+      KeySchema:
+        - AttributeName: teacher_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: school_id-index
+        KeySchema:
+        - AttributeName: school_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL 
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB4:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_class_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: class_id
+          AttributeType: 'S'
+        - AttributeName: class_name
+          AttributeType: 'S'          
+        - AttributeName: common_id
+          AttributeType: 'S'         
+      KeySchema:
+        - AttributeName: class_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: class_name-index
+        KeySchema:
+        - AttributeName: class_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB5:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_section_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: section_id
+          AttributeType: 'S'
+        - AttributeName: section_name
+          AttributeType: 'S'         
+        - AttributeName: common_id
+          AttributeType: 'S'             
+      KeySchema:
+        - AttributeName: section_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: section_name-index
+        KeySchema:
+        - AttributeName: section_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB6:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_subject_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: subject_id
+          AttributeType: 'S'
+        - AttributeName: subject_name
+          AttributeType: 'S'        
+        - AttributeName: common_id
+          AttributeType: 'S'              
+      KeySchema:
+        - AttributeName: subject_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: subject_name-index
+        KeySchema:
+        - AttributeName: subject_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB7:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_student_info' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: student_id
+          AttributeType: 'S'       
+        - AttributeName: common_id
+          AttributeType: 'S'                
+      KeySchema:
+        - AttributeName: student_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB8:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_student_study_profile' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: study_profile_id
+          AttributeType: 'S'        
+        - AttributeName: common_id
+          AttributeType: 'S'              
+      KeySchema:
+        - AttributeName: study_profile_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB9:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_syllabus_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: syllabus_id
+          AttributeType: 'S'
+        - AttributeName: syllabus_name
+          AttributeType: 'S'         
+        - AttributeName: common_id
+          AttributeType: 'S'                   
+      KeySchema:
+        - AttributeName: syllabus_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: syllabus_name-index
+        KeySchema:
+        - AttributeName: syllabus_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB10:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_unit_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: unit_id
+          AttributeType: 'S'  
+        - AttributeName: common_id
+          AttributeType: 'S'                         
+      KeySchema:
+        - AttributeName: unit_id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB11:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_chapter_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: chapter_id
+          AttributeType: 'S'   
+        - AttributeName: common_id
+          AttributeType: 'S'        
+        - AttributeName: lc_chapter_title
+          AttributeType: 'S'              
+      KeySchema:
+        - AttributeName: chapter_id
+          KeyType: HASH   
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: lc_chapter_title-index
+        KeySchema:
+        - AttributeName: lc_chapter_title
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB12:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_topic_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: topic_id
+          AttributeType: 'S'          
+        - AttributeName: common_id
+          AttributeType: 'S'           
+        - AttributeName: lc_topic_title
+          AttributeType: 'S'  
+      KeySchema:
+        - AttributeName: topic_id
+          KeyType: HASH   
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: lc_topic_title-index
+        KeySchema:
+        - AttributeName: lc_topic_title
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB13:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_digi_card_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: digi_card_id
+          AttributeType: 'S'               
+        - AttributeName: digi_card_name
+          AttributeType: 'S'              
+        - AttributeName: common_id
+          AttributeType: 'S'     
+        - AttributeName: lc_digi_card_name
+          AttributeType: 'S'      
+        - AttributeName: lc_digi_card_title
+          AttributeType: 'S'  
+      KeySchema:
+        - AttributeName: digi_card_id
+          KeyType: HASH   
+      GlobalSecondaryIndexes:
+      - IndexName: digi_card_name-index
+        KeySchema:
+        - AttributeName: digi_card_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL      
+      - IndexName: lc_digi_card_name-index
+        KeySchema:
+        - AttributeName: lc_digi_card_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: lc_digi_card_title-index
+        KeySchema:
+        - AttributeName: lc_digi_card_title
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB14:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_class_test_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: class_test_id
+          AttributeType: 'S'           
+        - AttributeName: common_id
+          AttributeType: 'S'                   
+      KeySchema:
+        - AttributeName: class_test_id
+          KeyType: HASH   
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB15:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_standard_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: standard_id
+          AttributeType: 'S'    
+        - AttributeName: standard_name
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'              
+      KeySchema:
+        - AttributeName: standard_id
+          KeyType: HASH 
+      GlobalSecondaryIndexes:
+      - IndexName: standard_name-index
+        KeySchema:
+        - AttributeName: standard_name
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB16:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_concept_blocks_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: concept_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: concept_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB17:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_parent_info' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: parent_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: parent_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB18:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_client_class_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: client_class_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: client_class_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB19:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_question_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: question_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: question_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB20:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_group_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: group_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: group_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB21:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_presets_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: preset_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: preset_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB22:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_content_category' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: category_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: category_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB23:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_content_disclaimer' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: disclaimer_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: disclaimer_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB24:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_teaching_activity' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: activity_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: activity_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB25:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_digicard_teacher_extension' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: extension_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: extension_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB26:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_question_source' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: source_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: source_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB27:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_cognitive_skill' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: cognitive_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: cognitive_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB28:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_quiz_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: quiz_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: quiz_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB29:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_test_question_paper' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: question_paper_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: question_paper_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB30:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_blueprint_table' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: blueprint_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: blueprint_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB31:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_test_result' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: result_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: result_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL  
+  DB32:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_quiz_result' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: result_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: result_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  DB33:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties: 
+      TableName: !Join [ '_', [ !Ref 'Stage', 'upschool_scanner_session_info' ] ]
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: 
+        - AttributeName: scanner_session_id
+          AttributeType: 'S'            
+        - AttributeName: common_id
+          AttributeType: 'S'                       
+      KeySchema:
+        - AttributeName: scanner_session_id
+          KeyType: HASH      
+      GlobalSecondaryIndexes:
+      - IndexName: common_id-index
+        KeySchema:
+        - AttributeName: common_id
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+  MySNSTopic1: 
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription: 
+        - Endpoint: !Join [ ':', [ 'arn','aws','lambda', !Ref 'Region', !Ref 'Account', 'function', !Join ['-', ['upschool','sendMail',!Ref 'Stage','sendMail']]]]
+          Protocol: "lambda"
+      TopicName: !Join [ '-', [ !Ref 'Stage', 'upschool-sendOTP' ] ]
+
+  S3Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      # AccessControl: PublicRead
+      BucketName: !Join [ '-', [ !Ref 'Stage', 'upschool' ] ]
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+            AllowedOrigins:
+              - '*'
+            ExposedHeaders:
+              - Date
+            Id: !Join [ '-', [ !Ref 'Stage', 'upschool', 'CORSPolicy' ] ]
+            MaxAge: 3600
+
+    DeletionPolicy: Retain
+  BucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      PolicyDocument:
+        Id: !Join [ '-', [ !Ref 'Stage', 'upschool', 'S3Policy' ] ]
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action: 's3:*'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref S3Bucket1
+                - /*
+      Bucket: !Ref S3Bucket1
+
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt 
+      - S3Bucket1
+      - WebsiteURL
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join 
+      - ''
+      - - 'https://'
+        - !GetAtt 
+          - S3Bucket1
+          - DomainName
+    Description: Name of S3 bucket to hold website content
+  S3Bucket:
+    Value: !Ref S3Bucket1
+    Description: Details of S3 Bucket 1
+  MyTopicArn1: 
+    Description: Arn of Created SNS Topic 1
+    Value: !Ref MySNSTopic1
