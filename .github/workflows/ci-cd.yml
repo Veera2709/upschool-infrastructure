@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - dev
+      - testing
+      - uat
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          pip install awscli --upgrade
+          pip install aws-sam-cli --upgrade
+
+      - name: Build SAM application
+        run: sam build
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || contains(github.ref, 'refs/heads/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          pip install awscli --upgrade
+          pip install aws-sam-cli --upgrade
+
+      - name: Deploy SAM application
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          BRANCH_NAME=$(echo ${{ github.ref }} | sed 's/refs\/heads\///')
+          sam deploy --template-file template.yaml --stack-name ${BRANCH_NAME}-upschool-stack --region ap-south-1 --no-fail-on-empty-changeset --parameter-overrides ParameterKey=Stage,ParameterValue=${BRANCH_NAME} ParameterKey=Region,ParameterValue=ap-south-1 ParameterKey=Account,ParameterValue=036801103583
