@@ -6,6 +6,7 @@ on:
       - dev
       - testing
       - uat
+      - prod
   workflow_dispatch:
 
 jobs:
